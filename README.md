@@ -36,6 +36,9 @@ Create `data` and `library` folders in the same directory as the `compose.yml` f
 ```bash
 mkdir -p data library
 ```
+
+> [!TIP]
+> If you are working inside the cloned YMDE repository, you can run ./get_files.sh <archive> to extract your Takeout archive and place the files automatically, skipping step 2.
  
 ### 2. Download Google Takeout Data
 
@@ -79,11 +82,27 @@ services:
       # - DRY_RUN=1                 # 1=Simulate without downloading, 0=disable
       # - COOKIES=/data/cookies.txt # Path to cookies file for private/gated content.
       # - SPONSORBLOCK_CATEGORIES="sponsor,intro,outro" # Example overriding categories
+
+      # --- Cookie Auto-Extractor (optional) disabled with AUTO_EXTRACT_COOKIES=0 ---
+      # - AUTO_EXTRACT_COOKIES=1                             # 1=Extract cookies from a mounted browser profile
+      # - COOKIE_EXTRACTOR_BROWSER_PROVIDER=Firefox          # Browser to extract from (currently only Firefox)
+      # - COOKIE_EXTRACTOR_BROWSER_PATH=/mnt/mozilla/firefox # Path to the browser profile (inside the container)
+
 ```
+
+`COOKIE_EXTRACTOR_BROWSER_PATH` must match the mount destination inside the
+container (the right-hand side of the volumes entry), not the path on your host.
+If Firefox has more than one profile, YMDE automatically picks the most recently
+modified one. You can pin a specific profile by pointing `COOKIE_EXTRACTOR_BROWSER_PATH`
+directly at its subdirectory (e.g. `/mnt/mozilla/firefox/abcd1234.default-release`).
+
 
 ### 4. Run the Downloader
 
 Execute the downloader using Docker Compose. It will pull the image (if not local), run the process, and then exit.
+
+> [!TIP]
+> YouTube will rate-limit or block requests that don't come from a logged-in session. It is strongly recommended to enable the cookie auto-extractor below, or provide a cookies.txt manually. Fewer parallel downloads (CONCURRENCY=2) also help avoid rate limiting.
 
 ```bash
 docker compose run --rm ymde
@@ -97,22 +116,32 @@ At the end of the process, you will see a summary of how many tracks were downlo
 
 All settings are managed through environment variables in your `compose.yml` file.
 
-| Variable                 | Description                                                                                             | Default     |
-| ------------------------ | ------------------------------------------------------------------------------------------------------- | ----------- |
-| `AUDIO_FORMAT`           | Output audio format.                                                                                    | `m4a`       |
-| `QUALITY`                | For `mp3`, VBR quality (`0`=best, `9`=worst).                                                           | `0`         |
-| `CONCURRENCY`            | Number of downloads to run in parallel.                                                                 | `4`         |
-| `WRITE_M3U`              | `1` to create `.m3u8` playlists in a `_playlists` folder.                                               | `1`         |
-| `REMOVE_VIDEOS_SUFFIX`   | `1` to change `My Playlist-videos` to `My Playlist`.                                                      | `1`         |
-| `PREFER_YOUTUBE_MUSIC`   | `1` to rewrite URLs to `music.youtube.com` for better metadata.                                           | `1`         |
-| `TRIM_NON_MUSIC`         | `1` to trim non-music segments (SponsorBlock).                                                            | `1`         |
-| `RETRY_SEARCH_IF_UNAVAILABLE` | `1` to auto-search & retry when a video is unavailable.                                           | `1`         |
-| `FALLBACK_MAX_RESULTS`    | Max search results considered for a replacement when unavailable.                                     | `6`         |
-| `SPONSORBLOCK_CATEGORIES`| Override categories (comma list). Default when enabled: `sponsor,intro,outro,selfpromo,music_offtopic`   | ` `         |
-| `RATE_LIMIT`             | Download speed limit (e.g., `1M`). **Automatically set to `500K` if no cookies are used.**                | ` `         |
-| `SLEEP`                  | Delay between downloads. Fixed (`5`) or random range (`2,8`).                                           | ` `         |
-| `DRY_RUN`                | `1` to simulate the process without downloading files.                                                  | `0`         |
-| `COOKIES`                | Path to a `cookies.txt` file (Netscape format) for accessing private or age-gated content.              | ` `         |
+| Variable                            | Description                                                                                             | Default     |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------- |
+| `AUDIO_FORMAT`                      | Output audio format.                                                                                    | `m4a`       |
+| `QUALITY`                           | For `mp3`, VBR quality (`0`=best, `9`=worst).                                                           | `0`         |
+| `CONCURRENCY`                       | Number of downloads to run in parallel.                                                                 | `4`         |
+| `WRITE_M3U`                         | `1` to create `.m3u8` playlists in a `_playlists` folder.                                               | `1`         |
+| `REMOVE_VIDEOS_SUFFIX`              | `1` to change `My Playlist-videos` to `My Playlist`.                                                    | `1`         |
+| `PREFER_YOUTUBE_MUSIC`              | `1` to rewrite URLs to `music.youtube.com` for better metadata.                                         | `1`         |
+| `TRIM_NON_MUSIC`                    | `1` to trim non-music segments (SponsorBlock).                                                          | `1`         |
+| `RETRY_SEARCH_IF_UNAVAILABLE`       | `1` to auto-search & retry when a video is unavailable.                                                 | `1`         |
+| `FALLBACK_MAX_RESULTS`              | Max search results considered for a replacement when unavailable.                                       | `6`         |
+| `SPONSORBLOCK_CATEGORIES`           | Override categories (comma list). Default when enabled: `sponsor,intro,outro,selfpromo,music_offtopic`  | ` `         |
+| `RATE_LIMIT`                        | Download speed limit (e.g., `1M`). **Automatically set to `500K` if no cookies are used.**              | ` `         |
+| `SLEEP`                             | Delay between downloads. Fixed (`5`) or random range (`2,8`).                                           | ` `         |
+| `DRY_RUN`                           | `1` to simulate the process without downloading files.                                                  | `0`         |
+| `COOKIES`                           | Path to a `cookies.txt` file (Netscape format) for accessing private or age-gated content.              | ` `         |
+| `AUTO_EXTRACT_COOKIES`              | `1` to automatically extract cookies from a mounted browser profile into the `./data/` directory.       | `0`         |
+| `COOKIE_EXTRACTOR_BROWSER_PROVIDER` | Browser to extract from. Currently only `Firefox` is supported.                                         | ` `         |
+| `COOKIE_EXTRACTOR_BROWSER_PATH`     | Path to the browser profile directory inside the container.                                             | ` `         |
+
+### Multiple Profiles
+
+If Firefox has more than one profile, YMDE picks the one with the most recently
+modified `cookies.sqlite` automatically. You can also point
+`COOKIE_EXTRACTOR_BROWSER_PATH` directly at a specific profile subdirectory
+(e.g. `/mnt/mozilla/firefox/abcd1234.default-release`) to pin it to one profile.
 
 ## Usage with Jellyfin
 
@@ -154,7 +183,7 @@ This avoids any manual copying and keeps your library perfectly in sync.
 
 This often happens when YouTube requires you to be logged in to view certain content (e.g., age-gated videos) or when a video is private or unavailable in your region.
 
-**Solution**: Use a `cookies.txt` file. By providing cookies from your logged-in YouTube session, YMDE can access these videos just like your browser.
+**Solution**: Provide cookies from your browser session. The easiest way is to enable the built-in auto-extractor by setting `AUTO_EXTRACT_COOKIES=1` in your `compose.yml` (see step 3 above). If you prefer to export cookies manually, see the guide at `/docs/COOKIES.md`.
 
 1. Export your cookies from your browser into a `cookies.txt` file. For detailed instructions, see the guide on [how to use cookies](/docs/COOKIES.md).
 2. Place the `cookies.txt` file in your `./data/` folder.

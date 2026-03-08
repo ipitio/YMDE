@@ -14,9 +14,16 @@ services:
       - PREFER_YOUTUBE_MUSIC=1 # 1=Rewrite URLs to music.youtube.com for better metadata
       - TRIM_NON_MUSIC=1 # 1=Trim non-music segments via SponsorBlock
       - RETRY_SEARCH_IF_UNAVAILABLE=1 # 1=Search for replacement if original video is unavailable
-      - COOKIES="/data/cookies.txt"
+      - COOKIES=/data/cookies.txt
+
+      # --- Cookie Auto-Extractor (optional) ---
+      - AUTO_EXTRACT_COOKIES=1                             # 1=Extract cookies from a mounted browser profile
+      - COOKIE_EXTRACTOR_BROWSER_PROVIDER=Firefox          # Browser to extract from (currently only Firefox)
+      - COOKIE_EXTRACTOR_BROWSER_PATH=/mnt/mozilla/firefox # Path to the browser profile (inside the container)
+
     volumes:
       - ./data:/data
-      - /mnt/BackupHDD/music:/library
+      - ./library:/library
+      - ~/.mozilla/firefox:/mnt/mozilla/firefox:ro  # Mount your host browser profile into the container (read-only)
 
     restart: "no"

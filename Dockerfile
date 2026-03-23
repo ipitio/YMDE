@@ -1,5 +1,5 @@
 # ---- Builder Stage ----
-FROM python:3.11-slim as builder
+FROM python:3.14-slim as builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -19,12 +19,13 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 # Copy application code
 COPY ytm_takeout_downloader.py /app/ytm_takeout_downloader.py
 COPY convert_csv_to_takeout_json.py /app/convert_csv_to_takeout_json.py
+COPY get_cookies/get_cookies.py /app/get_cookies.py
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 
 # ---- Final Stage ----
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 ARG BUILD_DATE
 ARG VERSION

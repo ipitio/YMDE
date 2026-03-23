@@ -22,6 +22,15 @@ SPONSORBLOCK_CATEGORIES="${SPONSORBLOCK_CATEGORIES:-}" # Optional custom list
 RETRY_SEARCH_IF_UNAVAILABLE="${RETRY_SEARCH_IF_UNAVAILABLE:-1}" # Enable fallback search by default
 FALLBACK_MAX_RESULTS="${FALLBACK_MAX_RESULTS:-6}" # Number of search results to consider for replacement
 
+# runs the cookie extractor script
+AUTO_EXTRACT_COOKIES="${AUTO_EXTRACT_COOKIES:-0}"
+# 1 and lowercase check
+if [[ "$AUTO_EXTRACT_COOKIES" == "1" || "${AUTO_EXTRACT_COOKIES,,}" == "true" ]]; then
+    echo "--> Auto-extracting cookies..."
+    python /app/get_cookies.py
+    echo "--> Cookie extraction finished."
+fi
+
 # 1. Convert CSVs to JSON
 # Build arguments for the conversion script
 CONVERT_ARGS=("${TAKEOUT_PATH}")
